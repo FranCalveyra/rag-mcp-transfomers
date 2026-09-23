@@ -4,10 +4,12 @@ Entrega: **viernes 9 de octubre de 2026**. Consigna completa en `mission.md`.
 
 | Persona | Bloque | Entregables | Puntos |
 |---|---|---|---|
-| A: _(nombre)_ | 1. RAG vectorial | `recuperar.py`, `experimentos/*.eval.json`, sección 1 del informe | 25 |
-| B: _(nombre)_ | 2. Agente con tool calling (**LangChain**: `ChatOpenAI` apuntando a OpenRouter, cada herramienta es una tool de LangChain) | `agente.py`, `respuestas.jsonl` + `.eval.json`, logs `.md`, sección 2 del informe | 30 |
-| C: _(nombre)_ | 3. Servidor MCP (el cliente también en **LangChain**, con `langchain-mcp-adapters`) | `servidor_mcp.py`, `agente_mcp.py`, `respuestas_mcp.jsonl` + `.eval.json`, `experimentos/inspector/`, sección 3 del informe | 15 |
-| D: _(nombre)_ | 4. Atención NumPy + 5. A mano | `atencion.py`, `a_mano/` escaneado, sección 4-5 del informe | 30 |
+| A: _(libre)_ | 1. RAG vectorial | `recuperar.py`, `experimentos/*.eval.json`, sección 1 del informe | 25 |
+| B: _(libre)_ | 2. Agente con tool calling (**LangChain**: `ChatOpenAI` apuntando a OpenRouter, cada herramienta es una tool de LangChain) | `agente.py`, `respuestas.jsonl` + `.eval.json`, logs `.md`, sección 2 del informe | 30 |
+| C: _(libre)_ | 3. Servidor MCP (el cliente también en **LangChain**, con `langchain-mcp-adapters`) | `servidor_mcp.py`, `agente_mcp.py`, `respuestas_mcp.jsonl` + `.eval.json`, `experimentos/inspector/`, sección 3 del informe | 15 |
+| D: _(libre)_ | 4. Atención NumPy + 5. A mano | `atencion.py`, `a_mano/` escaneado, sección 4-5 del informe | 30 |
+
+> Los bloques no tienen dueño asignado: quien agarra uno pone su nombre en la tabla (y lo pushea) antes de empezar.
 
 ## Dependencias
 
