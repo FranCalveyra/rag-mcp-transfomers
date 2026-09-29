@@ -15,6 +15,9 @@ python3 recuperar.py --preguntas datos/preguntas_recuperacion_dev.jsonl --salida
 python3 evaluar/evaluar.py recuperacion --preguntas datos/preguntas_recuperacion_dev.jsonl --resultados resultados.jsonl
 python3 experimentos/correr_recuperacion.py   # grilla de experimentos de la parte 1
 python3 experimentos/tabla.py                 # tabla markdown de experimentos
+set -a && source .env && set +a             # OPENROUTER_API_KEY (agente.py la lee sola de .env; evaluar.py no)
+python3 agente.py --preguntas datos/preguntas_agente_dev.jsonl --salida respuestas.jsonl   # con la API levantada
+python3 evaluar/evaluar.py agente --preguntas datos/preguntas_agente_dev.jsonl --respuestas respuestas.jsonl
 python3 atencion/test_atencion.py atencion.py
 ```
 
@@ -26,3 +29,6 @@ python3 atencion/test_atencion.py atencion.py
 - Código compartido en el paquete `hospital/`; los scripts de la raíz son CLIs finos con los comandos del enunciado.
 - Identificadores y textos en español. TDD con pytest en `tests/`. Commits convencionales, una rama por paso.
 - Los fragmentos del recuperador son texto **literal** del corpus (el evaluador busca la evidencia como substring).
+- Las herramientas viven en `hospital/api_cliente.py`, `hospital/documentos.py` y `hospital/descripciones.py` (sin
+  LangChain); `hospital/herramientas.py` las envuelve como tools y el servidor MCP (parte 3) debe reusar lo mismo.
+- Cada corrida del benchmark deja su log en `experimentos/corridas/`; guardar ahí también su `.jsonl` y `.eval.json`.
