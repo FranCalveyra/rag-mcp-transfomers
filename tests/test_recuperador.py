@@ -42,3 +42,17 @@ def test_recuperador_devuelve_el_fragmento_mas_parecido():
     puntuados = r.puntuar("ayuno")
     assert [t for t, _ in puntuados][0] == "El ayuno es de 8 horas."
     assert puntuados[0][1] >= puntuados[-1][1]
+
+
+def test_buscar_fragmentos_devuelve_metadatos():
+    docs = [Documento("a", "# Guía A\n\n## Ayuno\n\nEl ayuno es de 8 horas.\n")]
+    r = Recuperador(docs, EncoderDeJuguete(), estrategia="seccion", top_k=1)
+    [f] = r.buscar_fragmentos("ayuno")
+    assert (f.texto, f.titulo, f.seccion) == ("El ayuno es de 8 horas.", "Guía A", "Ayuno")
+
+
+def test_buscar_fragmentos_permite_pisar_la_seleccion():
+    docs = [Documento("a", "# A\n\n## Ayuno\n\nEl ayuno es de 8 horas.\n\n## Visitas\n\nLa visita dura horas.\n")]
+    r = Recuperador(docs, EncoderDeJuguete(), estrategia="seccion", top_k=1)
+    assert len(r.buscar_fragmentos("ayuno horas")) == 1
+    assert len(r.buscar_fragmentos("ayuno horas", top_k=2, margen=None)) == 2
