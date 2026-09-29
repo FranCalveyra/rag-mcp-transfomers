@@ -1,0 +1,15 @@
+{
+ "corpus": "datos/corpus",
+ "encoder": {
+  "tipo": "sentence_transformer",
+  "modelo": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+ },
+ "chunking": {
+  "estrategia": "parrafo"
+ },
+ "metadatos": false,
+ "top_k": 3,
+ "umbral": null,
+ "margen": null,
+ "reranker": null
+}

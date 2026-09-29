@@ -1,0 +1,17 @@
+{
+ "corpus": "datos/corpus",
+ "encoder": {
+  "tipo": "bert_promedio",
+  "modelo": "google-bert/bert-base-multilingual-cased"
+ },
+ "chunking": {
+  "estrategia": "ventana",
+  "palabras": 40,
+  "solapamiento": 10
+ },
+ "metadatos": true,
+ "top_k": 1,
+ "umbral": null,
+ "margen": null,
+ "reranker": null
+}
