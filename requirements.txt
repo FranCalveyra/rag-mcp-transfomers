@@ -7,3 +7,4 @@ openai
 langchain
 langchain-openai
 langchain-mcp-adapters
+pytest

@@ -76,7 +76,7 @@ La métrica castiga los dos extremos: traer pocos fragmentos pierde evidencia, y
 
 Armen un agente con **tool calling** sobre `deepseek/deepseek-v4-flash-0731` que conteste las preguntas de pacientes con dos fuentes: el recuperador de la parte 1 y la API del hospital (`python3 api/servidor.py`, en `http://localhost:8765`).
 
-El agente tiene que estar hecho con **LangChain**. El modelo se conecta con `ChatOpenAI` de `langchain-openai`, apuntando a OpenRouter (`base_url="https://openrouter.ai/api/v1"`), y cada herramienta es una tool de LangChain.
+El agente tiene que estar hecho con ** Chain**. El modelo se conecta con `ChatOpenAI` de `langchain-openai`, apuntando a OpenRouter (`base_url="https://openrouter.ai/api/v1"`), y cada herramienta es una tool de LangChain.
 
 Las herramientas tienen que llevar estos nombres, porque el evaluador los usa para verificar si el agente llamó a las que correspondían:
 
