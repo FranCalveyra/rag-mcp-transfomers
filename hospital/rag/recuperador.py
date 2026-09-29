@@ -48,20 +48,30 @@ class Recuperador:
         np.save(ruta, m)
         return m
 
-    def puntuar(self, consulta):
-        """[(texto, score)] de todos los fragmentos (o de los candidatos rerankeados), de mayor a menor."""
+    def _puntuar(self, consulta):
+        """[(Fragmento, score)] de todos los fragmentos (o de los candidatos rerankeados), de mayor a menor."""
         q = self.encoder.codificar_consultas([consulta])[0]
         scores = self.matriz @ q
         orden = np.argsort(-scores)
         if self.reranker is None:
-            return [(self.fragmentos[i].texto, float(scores[i])) for i in orden]
+            return [(self.fragmentos[i], float(scores[i])) for i in orden]
         cand = orden[:self.candidatos]
         pares = [(consulta, self.fragmentos[i].para_embedding(self.metadatos)) for i in cand]
         re_scores = self.reranker.predict(pares, show_progress_bar=False)
-        return sorted(((self.fragmentos[i].texto, float(s)) for i, s in zip(cand, re_scores)), key=lambda x: -x[1])
+        return sorted(((self.fragmentos[i], float(s)) for i, s in zip(cand, re_scores)), key=lambda x: -x[1])
+
+    def puntuar(self, consulta):
+        """[(texto, score)] de mayor a menor."""
+        return [(f.texto, s) for f, s in self._puntuar(consulta)]
+
+    def buscar_fragmentos(self, consulta, **seleccion):
+        """Los Fragmento elegidos (texto literal + documento, título y sección). top_k, umbral y margen se
+        pueden pisar por llamada; si no, se usan los de la configuración."""
+        s = {"top_k": self.top_k, "umbral": self.umbral, "margen": self.margen, **seleccion}
+        return seleccionar(self._puntuar(consulta), s["top_k"], s["umbral"], s["margen"])
 
     def buscar(self, consulta):
-        return seleccionar(self.puntuar(consulta), self.top_k, self.umbral, self.margen)
+        return [f.texto for f in self.buscar_fragmentos(consulta)]
 
     @classmethod
     def desde_config(cls, cfg):
