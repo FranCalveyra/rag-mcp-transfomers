@@ -13,6 +13,14 @@ def fmt(x):
     return "-" if x is None else f"{x:g}"
 
 
+def nombre_chunking(ch):
+    """Nombre de la estrategia con la terminologia de la clase (longitud fija, semantico, estructural)."""
+    if ch["estrategia"] == "ventana":
+        return f"longitud fija ({ch['palabras']} palabras, solap. {ch['solapamiento']})"
+    return {"seccion": "estructural (sección)", "parrafo": "semántico (párrafo)",
+            "oracion": "semántico (oración)"}[ch["estrategia"]]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--orden", choices=["cr", "nombre"], default="cr")
@@ -22,9 +30,7 @@ def main():
         nombre = ev.name.removesuffix(".jsonl.eval.json")
         cfg = json.loads((CARPETA / f"{nombre}.config.json").read_text(encoding="utf-8"))
         r = json.loads(ev.read_text(encoding="utf-8"))["resumen"]
-        ch = cfg["chunking"]
-        chunk = ch["estrategia"] + (f" {ch['palabras']}/{ch['solapamiento']}" if ch["estrategia"] == "ventana" else "")
-        filas.append((nombre, cfg["encoder"]["modelo"].split("/")[-1], chunk, "sí" if cfg["metadatos"] else "no",
+        filas.append((nombre, cfg["encoder"]["modelo"].split("/")[-1], nombre_chunking(cfg["chunking"]), "sí" if cfg["metadatos"] else "no",
                       cfg["top_k"], fmt(cfg["umbral"]), fmt(cfg["margen"]), "sí" if cfg.get("reranker") else "no", r))
     filas.sort(key=(lambda f: -f[-1]["context_relevance"]) if a.orden == "cr" else (lambda f: f[0]))
     print("| Encoder | Chunking | Metadatos | k | Umbral | Margen | Rerank | CR | Recall | Precision | MRR | k medio | Archivo |")
