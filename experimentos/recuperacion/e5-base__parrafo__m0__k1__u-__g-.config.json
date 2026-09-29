@@ -1,0 +1,17 @@
+{
+ "corpus": "datos/corpus",
+ "encoder": {
+  "tipo": "sentence_transformer",
+  "modelo": "intfloat/multilingual-e5-base",
+  "prefijo_consulta": "query: ",
+  "prefijo_pasaje": "passage: "
+ },
+ "chunking": {
+  "estrategia": "parrafo"
+ },
+ "metadatos": false,
+ "top_k": 1,
+ "umbral": null,
+ "margen": null,
+ "reranker": null
+}

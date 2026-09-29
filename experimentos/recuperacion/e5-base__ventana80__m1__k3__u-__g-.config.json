@@ -1,0 +1,19 @@
+{
+ "corpus": "datos/corpus",
+ "encoder": {
+  "tipo": "sentence_transformer",
+  "modelo": "intfloat/multilingual-e5-base",
+  "prefijo_consulta": "query: ",
+  "prefijo_pasaje": "passage: "
+ },
+ "chunking": {
+  "estrategia": "ventana",
+  "palabras": 80,
+  "solapamiento": 20
+ },
+ "metadatos": true,
+ "top_k": 3,
+ "umbral": null,
+ "margen": null,
+ "reranker": null
+}
