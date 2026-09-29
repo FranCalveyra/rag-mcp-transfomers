@@ -174,7 +174,77 @@ Una fila por configuración (98). Cada una tiene en `experimentos/recuperacion/`
 
 ## 2. Agente con dos fuentes
 
-_Pendiente._
+### Cómo está hecho
+
+- **LangChain, sin LangGraph.** `ChatOpenAI` de `langchain-openai` apuntando a OpenRouter
+  (`deepseek/deepseek-v4-flash-0731`, temperatura 0) y seis tools de LangChain (`hospital/herramientas.py`) con los
+  nombres que pide el evaluador. El tool calling es un bucle explícito (`hospital/agente/bucle.py`). El modelo, con las
+  tools enlazadas por `bind_tools`, pide herramientas. Se ejecutan y sus resultados vuelven como `ToolMessage`, hasta que
+  el modelo responde sin pedir nada (máximo 6 llamadas). Si una herramienta no existe o falla, el error vuelve al modelo
+  como texto para que se corrija.
+- **Fuentes.** `buscar_documentos` usa el recuperador de la parte 1 y antepone a cada fragmento su origen
+  (`[Documento > Sección]`), así el modelo sabe de dónde sale cada dato. Las otras cinco llaman a la API
+  (`hospital/api_cliente.py`) y devuelven el JSON tal cual, también cuando es un error con la lista de opciones válidas.
+- **Descripciones** (`hospital/descripciones.py`). Cada una dice qué fuente consulta, para qué preguntas sirve, qué
+  NO tiene (por ejemplo, `consultar_turnos` aclara que lo que hay que llevar está en los documentos) y los valores
+  válidos del parámetro. Son las mismas que va a publicar el servidor MCP de la parte 3.
+- **Prompt de sistema** (`bucle.py`). Toda la información sale de las herramientas. Normas y procedimientos van a los
+  documentos, el estado de hoy va a la API, y cada parte de una pregunta mixta se cubre con su fuente. La respuesta usa
+  solo datos de los resultados y, si algo no está, lo dice.
+- **Logs** (`hospital/agente/corrida.py`). Cada corrida deja `experimentos/corridas/agente_<fecha>.md` con, por pregunta,
+  cada llamada al modelo (tokens de entrada, de cache, de salida y de razonamiento, costo en USD que informa OpenRouter
+  e id de generación), cada herramienta con sus argumentos y su resultado completo, y la respuesta final. Arriba
+  resume totales por pregunta y de la corrida.
+
+### Corridas
+
+Cada corrida tiene en `experimentos/corridas/` su log `.md`, su `respuestas.jsonl` y su `.eval.json`. La entregada es
+la 4 (`respuestas.jsonl` en la raíz = `agente_20260929-105719`).
+
+| # | Corrida | Cambio respecto de la anterior | Ruteo | CR | F | AR | Costo agente (USD) | Costo juez (USD) |
+|---|---|---|---|---|---|---|---|---|
+| 1 | `agente_20260929-104728` | versión inicial; `buscar_documentos` con la selección de la parte 1 (top-2, margen 0,005) | 1,00 | 4,917 | 5,00 | 4,917 | 0,001405 | 0,01667 |
+| 2 | `agente_20260929-105117` | `buscar_documentos` devuelve siempre 3 fragmentos | 1,00 | 4,417 | 5,00 | 5,000 | 0,001464 | 0,02141 |
+| 3 | `agente_20260929-105408` | hasta 3 fragmentos, solo los que están a menos de 0,02 del mejor | 1,00 | 4,833 | 5,00 | 4,917 | 0,001439 | 0,01797 |
+| 4 | `agente_20260929-105719` | vuelve la selección de la parte 1; la descripción de `buscar_documentos` pide usar las palabras del paciente y una búsqueda por tema | **1,00** | **5,000** | **5,00** | **5,000** | **0,001458** | 0,01744 |
+
+Cada corrida hace 24 llamadas al modelo (2 por pregunta: una que pide las herramientas y otra que responde) y usa unos
+40 mil tokens de entrada y 2,3 mil de salida. En las preguntas mixtas (A10–A12) el modelo pide las dos herramientas
+en paralelo en la misma llamada. El costo del agente es de alrededor de USD 0,0015 por corrida, y el juez cuesta más de
+diez veces eso.
+
+### Dónde falló el agente y qué se cambió
+
+**A11** ("Necesito turno con cardiología, ¿cuál es el primero y qué tengo que llevar?") fue la única pregunta con
+problemas en la corrida 1 (CR 4, AR 4). El log muestra que el ruteo estuvo bien: llamó a `consultar_turnos` y a
+`buscar_documentos`. Pero buscó *"requisitos y documentación para turno en consultorios externos de cardiología"*, y el
+recuperador devolvió solo la sección "Cómo se pide un turno", que menciona la derivación. La sección "Qué llevar a la
+primera consulta" (DNI, credencial, derivación, estudios previos) quedó tercera, a 0,018 del primero y fuera del
+margen de 0,005. La respuesta fue fiel a lo que recibió (F 5), pero incompleta.
+
+Primero se probó darle más fragmentos al agente, porque la métrica de la parte 1 castiga cada fragmento extra y la del
+juez no tanto:
+
+- Con **top-3 fijo** (corrida 2), A11 sube a 5, pero el ruido baja el CR de A01–A04 y A12 (3 y 4): el juez penaliza
+  los fragmentos que no hacen falta. El promedio de CR cae a 4,417.
+- Con **margen 0,02** (corrida 3), el resto vuelve a 5. Pero A11 falla otra vez (CR 3), porque el modelo redactó la
+  consulta de otra forma y la sección correcta ya no quedaba cerca del primero.
+
+El problema no era la cantidad de fragmentos sino la consulta. Buscar "requisitos y documentación" no se parece al
+encabezado "Qué llevar a la primera consulta"; buscar con las palabras del paciente ("qué tengo que llevar") sí. Por
+eso en la corrida 4 se volvió a la selección de la parte 1 y se cambió la descripción de `buscar_documentos`: la
+consulta va "con las mismas palabras que usó el paciente" y, si la pregunta toca varios temas, se hace una búsqueda por
+tema. En A11 el modelo buscó *"qué llevar a un turno de cardiología…"*, recibió la sección correcta y contestó completo.
+
+En el mismo cambio se reemplazó el ejemplo de la descripción ("horario de visita de los abuelos en neonatología"), que
+era literalmente la pregunta A01 de dev, por uno que no aparece en ninguna pregunta dev ("cómo es una consulta por
+telemedicina"). Así se evita ajustar el agente a las preguntas dev.
+
+**Límites de esta medición.** Son 12 preguntas y una corrida por configuración. El modelo redacta la consulta distinto
+en cada corrida aun con temperatura 0: en A11, con la misma descripción, las corridas 1 a 3 buscaron "…consultorios
+externos de cardiología", "…consultorios externos cardiología" y "…consultorios externos" a secas. Así que una
+diferencia de una pregunta entre corridas está dentro del ruido. Lo que se sostiene en las cuatro corridas es el ruteo
+(1,00 siempre) y la fidelidad (5,00 siempre): el agente no inventó datos en ninguna respuesta.
 
 ## 3. Servidor MCP
 
