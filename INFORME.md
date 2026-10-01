@@ -248,7 +248,38 @@ diferencia de una pregunta entre corridas está dentro del ruido. Lo que se sost
 
 ## 3. Servidor MCP
 
-_Pendiente._
+### Implementación y verificación
+
+Las seis herramientas de la parte 2 se exponen desde `servidor_mcp.py` con el SDK oficial `mcp` y transporte stdio. Sus
+funciones delegan a los mismos módulos de documentos y API; las descripciones compartidas viven en
+`hospital/descripciones.py`. `agente_mcp.py` descubre las tools con `tools/list`, las convierte a tools de LangChain con
+`langchain-mcp-adapters` y sus invocaciones usan `tools/call`. La sesión MCP queda abierta durante toda la corrida para
+evitar reiniciar el servidor y recargar el encoder por cada llamada.
+
+Se verificó el descubrimiento de las seis herramientas y una llamada a cada una. Las cinco herramientas de la API
+devolvieron JSON del hospital y `buscar_documentos` devolvió fragmentos del corpus. MCP Inspector se conectó por stdio
+al servidor. El registro de la corrida está en
+`experimentos/corridas/agente_mcp_20261001-200728.md`; las respuestas y evaluación están en `respuestas_mcp.jsonl` y
+`respuestas_mcp.jsonl.eval.json`. El Inspector se conectó, listó las seis herramientas y permitió invocar cada una
+con éxito. Las siete capturas PNG (listado y seis resultados) están en `experimentos/inspector/`.
+Para apuntar a la API local en el puerto alternativo, se inició Inspector con
+`npx @modelcontextprotocol/inspector -e HOSPITAL_API=http://127.0.0.1:18765 .venv/bin/python servidor_mcp.py`;
+la opción `-e` pasa explícitamente esa variable al proceso MCP.
+
+### Comparación con la parte 2
+
+| Agente | Ruteo | Relevancia del contexto | Fidelidad | Pertinencia de respuesta | Costo agente (USD) | Costo juez (USD) |
+|---|---:|---:|---:|---:|---:|---:|
+| Parte 2 (`agente_20260929-105719`) | 1,000 | 5,000 | 5,000 | 5,000 | 0,001458 | 0,01744 |
+| Parte 3 (`agente_mcp_20261001-200728`) | 1,000 | 4,833 | 5,000 | 4,917 | 0,003524 | 0,02002 |
+
+Las dos corridas enrutan correctamente las 12 preguntas y mantienen fidelidad perfecta. La diferencia está en A11:
+la parte 2 recuperó «Qué llevar a la primera consulta» con DNI, credencial, derivación y estudios previos. En la corrida
+MCP, la primera búsqueda devolvió «Llegada» y la segunda una sección sobre cómo pedir el turno; faltó la lista de
+documentación. El juez bajó la relevancia del contexto a 3 y la pertinencia de la respuesta a 4 para esa pregunta.
+Esto coincide con los logs: el agente MCP hizo una llamada adicional al modelo en A11 (25 en total frente a 24 en la
+parte 2) y entregó contexto menos pertinente. Por eso sus costos de agente y juez también fueron algo mayores; una
+corrida por versión no alcanza para atribuir la diferencia al transporte MCP por sí solo.
 
 ## 4. Atención en NumPy
 
@@ -260,4 +291,6 @@ _Pendiente._
 
 ## Costo total en OpenRouter
 
-_Pendiente._
+En las corridas entregadas de las partes 2 y 3, el costo medido es **USD 0,042442**: USD 0,004982 del agente y USD
+0,03746 del juez. La parte 3 costó USD 0,003524 para las llamadas a DeepSeek y USD 0,02002 para Gemini como juez.
+Las partes 1, 4 y 5 no usan OpenRouter en sus procedimientos de evaluación.
