@@ -49,3 +49,11 @@ def multicabeza(X, cabezas, Wo, mascara=False):
                for Wq, Wk, Wv in cabezas]
     concatenada = np.concatenate(salidas, axis=-1)
     return concatenada @ np.asarray(Wo)
+
+
+def layer_norm(x, eps=1e-5):
+    """Normaliza cada fila a media cero y varianza aproximadamente uno."""
+    x = np.asarray(x)
+    media = np.mean(x, axis=-1, keepdims=True)
+    varianza = np.mean((x - media) ** 2, axis=-1, keepdims=True)
+    return (x - media) / np.sqrt(varianza + eps)
