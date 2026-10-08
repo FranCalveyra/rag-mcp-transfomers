@@ -283,7 +283,31 @@ corrida por versión no alcanza para atribuir la diferencia al transporte MCP po
 
 ## 4. Atención en NumPy
 
-_Pendiente._
+La implementaciÃ³n estÃ¡ en `atencion.py` y usa Ãºnicamente NumPy. Se implementaron las
+cinco operaciones pedidas:
+
+- `softmax(M)`: calcula el softmax sobre el Ãºltimo eje. Antes de aplicar la exponencial
+  resta el mÃ¡ximo de cada fila, de modo que tambiÃ©n sea estable con valores grandes.
+- `atencion(Q, K, V, mascara=False)`: calcula los puntajes `Q K^T / sqrt(d_k)`, aplica
+  opcionalmente la mÃ¡scara causal poniendo `-inf` sobre la diagonal superior, y
+  devuelve tanto `A V` como la matriz de pesos `A`.
+- `autoatencion(X, Wq, Wk, Wv, mascara=False)`: proyecta la entrada en consultas,
+  claves y valores, y reutiliza la atenciÃ³n anterior.
+- `multicabeza(X, cabezas, Wo, mascara=False)`: ejecuta cada cabeza, concatena sus
+  salidas y aplica la proyecciÃ³n final `Wo`.
+- `layer_norm(x, eps=1e-5)`: normaliza cada fila a media aproximadamente cero y
+  varianza aproximadamente uno, sin parÃ¡metros aprendidos `gamma` ni `beta`.
+
+La verificaciÃ³n se hizo con:
+
+```bash
+python3 atencion/test_atencion.py atencion.py
+```
+
+El resultado fue **14 tests ejecutados, 14 aprobados (`OK`)**. Se comprobaron el
+softmax estable, la escala por `sqrt(d_k)`, la mÃ¡scara causal, las formas de las
+salidas, la permutaciÃ³n de filas, la concatenaciÃ³n de mÃºltiples cabezas y las
+invariantes de `layer_norm`.
 
 ## 5. Bloque de transformer a mano
 
