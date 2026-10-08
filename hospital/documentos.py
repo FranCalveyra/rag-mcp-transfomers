@@ -20,8 +20,15 @@ def seleccion_agente():
 
 def buscar_documentos(consulta):
     """Fragmentos elegidos, cada uno con su fuente '[Documento > Sección]' arriba del texto literal."""
+    seleccion = seleccion_agente()
+    # En consultas sobre documentacion o que llevar, la seccion especifica puede
+    # quedar tercera cuando la pregunta tambien menciona el tipo de turno.
+    # La configuracion de la Parte 1 permanece sin cambios.
+    consulta_normalizada = consulta.casefold()
+    if "llevar" in consulta_normalizada or "document" in consulta_normalizada:
+        seleccion = {**seleccion, "top_k": max(seleccion.get("top_k", 2), 3), "margen": None}
     bloques = []
-    for f in obtener_recuperador().buscar_fragmentos(consulta, **seleccion_agente()):
+    for f in obtener_recuperador().buscar_fragmentos(consulta, **seleccion):
         fuente = f"{f.titulo} > {f.seccion}" if f.seccion else f.titulo
         bloques.append(f"[{fuente}]\n{f.texto}")
     return SEPARADOR.join(bloques) or "No se encontraron documentos para esa consulta."
