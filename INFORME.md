@@ -311,7 +311,28 @@ invariantes de `layer_norm`.
 
 ## 5. Bloque de transformer a mano
 
-_Pendiente._
+Se procesaron manualmente las frases **“El banco aguanta ___”** y **“El banco presta ___”** mediante un bloque Transformer completo. Para cada frase se calcularon los embeddings de palabra y posición, las proyecciones Q, K y V, los puntajes de atención, softmax, mezcla de valores, conexiones residuales, layer normalization, feed-forward y la predicción final.
+
+Resultados con máscara causal
+
+En la configuración tipo decoder, la representación de **“banco”** es la misma en ambas frases, ya que la máscara causal impide que este token vea las palabras posteriores (“aguanta” o “presta”).
+
+Sin embargo, la representación de la última palabra sí incorpora el contexto anterior y permite obtener predicciones diferentes:
+
+- **“El banco aguanta ___” → “peso”**, con una probabilidad aproximada de **59,6 %**.
+- **“El banco presta ___” → “dinero”**, con una probabilidad aproximada de **59,6 %**.
+
+Comparación sin máscara
+
+Al eliminar la máscara causal, como en un encoder, cada token puede atender a toda la oración. Por este motivo, la representación de **“banco”** cambia según aparezca junto a “aguanta” o a “presta”. Esto muestra cómo la atención permite contextualizar una palabra ambigua utilizando las palabras que la rodean.
+
+Conclusión
+
+La parte con máscara causal se asemeja al funcionamiento de un modelo decoder como GPT, que predice el siguiente token sin utilizar información futura. La atención sin máscara se asemeja a un encoder como BERT, donde cada palabra puede utilizar información de toda la secuencia.
+
+Los embeddings de posición también son importantes porque incorporan información sobre el orden de las palabras. Si se eliminaran, el modelo perdería parte de la información necesaria para distinguir frases en las que el orden modifica el significado.
+
+El desarrollo completo de las operaciones y sus justificaciones se encuentra escaneado en la carpeta `a_mano/`.
 
 ## Costo total en OpenRouter
 
